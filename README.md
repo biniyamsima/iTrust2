@@ -185,3 +185,40 @@ Billing User, Bobby Billington, is an authenticated Billing user of iTrust2. Bob
 
 **Scenario 3** - *No Bills are available*\
 Patient, Zach Groseopen, is an authenticated in iTrust2, but has not yet been billed for his appointment. Zach chooses to view is billing page. Since Zach has not yet been billed, the billing page is contains no bills and is empty. A message appears on the screen letting Zach know that he does not have any current bills.
+
+## 5.1 Preconditions
+At least one patient and one billing user ([UC1](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-1:-Adding-New-Billing-User)) are registered in the iTrust2 system. A billing user is logged into the system and has accessed the main billing page that contains all bills in the system ([UC4](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-4:-View-Bills)). The billing user then selects one of the bills from this list.
+
+## 5.2 Main Flow
+The billing user selects the "Pay Bill" option while on the page for an individual bill. A form appears below the bill information that allows the billing user to record payment methods and the amount paid for each [S1][S2].
+
+## 5.3 Sub-Flows
+* [S1] If the bill is unpaid, then the billing user can select any number of payment methods from a list of cash, check, credit card, or insurance. The billing user then enters the amount paid with each payment method in their associated fields [E1]. If the total amount entered across all payment methods is equal to the bill amount, then the bill is automatically marked as paid. Otherwise, the bill is marked as partially paid.
+* [S2] If the bill has already been paid in full or has been partially paid, then the form is populated with the existing payment information. The billing user can then edit this information [E1].
+
+## 5.4 Alternative Flows
+* [E1] If the total amount entered into the payment method fields is greater than the total bill amount, then the user is unable to submit the form and an error message is displayed beneath the list of payment methods.
+
+## 5.5 Logging
+| Transaction Code | Verbose Description | Logged In MID | Secondary MID | Transaction Type | Patient Viewable |
+|------------------|---------------------|---------------|---------------|------------------|------------------|
+| 2300 | Add Payment Information | Billing User | None | Create | No |
+| 2301 | Edit Payment Information | Billing User | None | Edit | No |
+
+## 5.6 Data Format
+| Field | Format |
+|-------|--------|
+| Cash | Decimal amount paid |
+| Check | Decimal amount paid |
+| Credit Card | Decimal amount paid |
+| Insurance | Decimal amount paid |
+
+## 5.7 Acceptance Scenarios
+* **Scenario 1** - *Add Payment to Unpaid Bill*\
+An authenticated billing user logs into the iTrust2 system, visits the billing page, and then chooses an unpaid bill. They have just received payment information from the associated patient. The user presses the "Pay Bill" option and a form appears that allows them to enter information about the patient's payment methods. The bill is for a total of $75 and the patient had already paid $25 in cash while in the office. The patient then paid the remaining $50 of the bill with their credit card. The billing user selects the "Cash" checkbox and enters "25" into the associated field, then selects the "Credit Card" checkbox and enters "50" into its associated field. The billing user then presses the "Submit" button at the bottom of the form and a success message appears that states: "Payment Added Successfully". The bill page is updated to show a new status of "Paid" with the payment information that was just entered.
+
+* **Scenario 2** - *Add Payment to Partially Paid Bill*\
+An authenticated billing user logs into the iTrust2 system, visits the billing page, and then chooses a partially paid bill. The patient's insurance has already covered $100 of the total $125 bill, which had been entered into the system prior. The billing user has just received payment information from the patient regarding the remainder of the bill, which they are paying with a check. The billing user presses the "Pay Bill" option and a form appears that allows them to enter information about the patient's payment methods. The form is populated with the insurance payment information that had been entered previously. The billing user selects the "Check" checkbox and enters "25" into the associated field, then presses the "Submit" button at the bottom of the form. A success message appears that states: "Payment Updated Successfully" and the bill page is updated to show a new status of "Paid" with the payment information that was just entered.
+
+* **Scenario 3** - *Incorrect Total Paid*\
+An authenticated billing user logs into the iTrust2 system, visits the billing page, and then chooses an unpaid bill. They have just received payment information from the associated patient. The user presses the "Pay Bill" option and a form appears that allows them to enter information about the patient's payment methods. The bill is for a total of $100 and the patient had already paid $50 in cash while in the office. The patient then paid the remaining $50 of the bill with their credit card. The billing user selects the "Cash" checkbox and enters "50" into the associated field, then selects the "Credit Card" checkbox and accidentally enters "75" into its associated field. The billing user then presses the "Submit" button at the bottom of the form and an error message appears that states: "Amount paid is greater than bill amount". The payment information is not saved.

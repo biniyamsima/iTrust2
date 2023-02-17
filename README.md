@@ -19,7 +19,7 @@ Billing Staff Member: A Staff Member in the system that is not an HCP, rather, t
 Current Procedural Terminology Code (CPT Code): A unique five digit code that is issued to a patients. The code indicates the type of service the patient received and the length of time of the service. CPTs are maintained by the Billing Staff Members and are assigned by HCPs. CPTs are viewable on bills.
 Administrator: The administrator assigns medical identification numbers and passwords to HCPs.
 
-
+## Implemented Functionalities
 # UC 1
 
 ## 1.1 Preconditions 
@@ -72,3 +72,116 @@ Admin Josh attempts to delete a billing staff member already in the system that 
 
 ### Scenario 3 :: Billing staff member is added successfully
 Admin Josh adds a billing staff member to the system by username and password. Josh selects the user type to be a billing staff member then Josh clicks add user. No errors are produced and Josh can see the billing staff member listed in the system.
+
+## UC 2
+
+### 2.1 Preconditions
+The iTrust2 system contains at least one billing staff member. The iTrust2 user has authenticated themselves into iTrust2. 
+
+### 2.2 Main Flow
+The Billing User navigates to the CPT codes page, where a list of all the CPT codes and their related relevant information are displayed. From there, they have the ability to add[S1][E2][E3], edit[S2][E2], or remove[S3] any CPT code in the system.
+
+### 2.3 Sub-flows
+ * [S1] The Billing User selects the option to Add a CPT code to the system. This brings up input fields for the CPT code, description, and associated item price [E2, E3].
+ * [S2]  The Billing User selects the option to edit a CPT code already in the system. This lets them select a CPT code and edit its code, description, or associated item price [E2]. 
+ * [S3] The Billing User selects the option to delete a CPT code from the system. This allows them to select a CPT code to delete and to confirm to remove the CPT code from the system[E3]
+### 2.4 Alternative Flows
+ * [E1] If there are no currently stored CPT codes, the system prompts the Billing User that there are currently no CPT codes in the database. 
+ * [E2] If the Billing User provides an invalid input, such as a non-integer value less than or equal to zero for the price or a code that is not 5 numerical characters an when adding or editing a CPT code, the code is not saved and an error message is displayed.
+ * [E3] If the Billing User attempts to add a CPT code that already exists in the system, a duplicate error message is displayed and the code is not saved. 
+
+### 2.5 Logging
+| Transaction Code | Verbose Description | Logged In MID | Secondary MID | Transaction Type | Patient Viewable |
+|------------------|---------------------|---------------|---------------|------------------|------------------|
+| 2000 | Billing User Adds CPT code | Billing | None | Create | No |
+| 2001 | Billing User Edits CPT Code | Billing | None | Edit | No |
+| 2002 | Billing User Deletes CPT Code | Billing | None | Remove | No |
+
+### 2.6 Data Format
+|Field	               |Format
+|----------------------|------------------------------------------------------------|
+|Code                  |5 number code                                               |
+|Description           |Short string description of the code, up to 50 characters   |
+|Assoc. Item Price     |Price of the item the code is associated with               |
+
+### 2.7 Acceptance Scenarios
+Scenario 1 - Billing User adds a CPT code to system\
+Billing User Mike opens the CPT page and chooses the option to add a CPT code. He fills in a valid 5 digit code, not already in the database. He then enters the description then associated item and price. He chooses the option to submit this code and it is added to the system. It then appears in the listing on the CPT codes page.
+
+Scenario 2 - Billing User edits a CPT code in the system\
+Billing User Mike opens the CPT page and chooses the option to edit a CPT code. He may fill in another valid 5 digit code, not already in the database. He then may enter a new description and then update the associated item and price. He chooses the option to submit this code and it is updated in the system. The changes then appear in the listing on the CPT codes page.
+
+
+Scenario 3 - Billing User attempts to add an invalid CPT code from system\
+Billing User Mike opens the CPT page and chooses the option to add a CPT code. He fills in a valid 5 digit code, not already in the database. He then enters the description then associated item. Finally he enters a negative non-integer value for the price. He chooses the option to submit this code. An error message appears, informing him that all prices must be integers greater than 0. The code is not added to the system. It doesn't appear in the listing on the CPT codes page.
+
+## UC 3 Add CPT Codes to Office Visit
+
+### 3.1 Preconditions
+The iTrust2 system contains at least one HCP, patient, and billing staff member. The HCP is in the process of documenting an office visit for the patient. The iTrust2 user has authenticated themselves into iTrust2. 
+
+### 3.2 Main Flow
+During an office visit, an HCP should enter at least one CPT code appropriate for the office visit [S1][S2][E1]. At least once of the CPT codes must be from the list of office visit time ranges as listed in the Maintain CPT Codes description [(UC2)](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-2:-Maintain-CPT-Codes). Other CPT codes can be added as appropriate and if they are available in the iTrust2 system (e.g., a CPT code for administering a vaccine). The HCP will select the CPT code from a drop-down menu.
+
+### 3.3 Sub-flows
+ * [S1] The HCP adds one CPT code from the list of available CPT codes before saving the office visit.
+ * [S2] The HCP adds multiple CPT codes from the list of available codes before saving the visit.
+
+### 3.4 Alternative Flows
+ * [E1] The HCP attempts to submit an office visit that does not have any assigned CPT codes.
+
+### 3.5 Logging
+| Transaction Code | Verbose Description | Logged In MID | Secondary MID | Transaction Type | Patient Viewable |
+|------------------|---------------------|---------------|---------------|------------------|------------------|
+| 701 | Office Visit created for patient | HCP | None | Edit | Yes |
+
+### 3.6 Data Format
+*The data created for this Use Case is that of an Office Visit. The HCP is adding CPT Codes to the OfficeVisits.*
+
+### 3.7 Acceptance Scenarios
+Scenario 1 - HCP adds CPT code to office visit\
+HCP Sarah Heckwoman authenticates into iTrust2. Sarah creates an office visit for a patient that she has just visited with. The appointment lasted 30 minutes, so she adds the default CPT code for the time range 30-44 minutes. She finishes entering the rest of information for the office visit and submits it. A success message appears that reads: "Office Visit created successfully" and the office visit is saved to the database.
+
+Scenario 2 - HCP adds multiple CPT codes to office visit\
+HCP Sarah Heckwoman authenticates into iTrust2. Sarah creates an office visit for a patient that she has just visited with. The appointment lasted 45 minutes and the patient received an X-Ray during their visit. Sarah adds the default CPT code for the time range 45-59 minutes and another CPT code for X rays. She finishes entering the rest of information for the office visit and submits it. A success message appears that reads: "Office Visit created successfully" and the office visit is saved to the database.
+
+Scenario 3 - HCP does not add CPT code to office visit\
+HCP Sarah Heckwoman authenticates into iTrust2. Sarah creates an office visit for a patient that she has just visited with. The appointment lasted 20 minutes, but she forgets to add the relevant CPT code to the visit information. She finishes entering the rest of information for the office visit and submits it. An error message appears that reads: "An office visit must have at least one CPT code" and the office visit is not saved to the database.
+
+# UC4: View Bills
+
+## 4.1 Precondition
+A Patient and Billing User ([UC1](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-1:-Adding-New-Billing-User)) are registered in the iTrust2 system. A user logs into the system. 
+
+## 4.2 Main Flow
+When on the Billing Page, the Billing User can see a list of bills, their status, and totals for all patients [E1]. The Billing user may select a specific bill [S1] and print it [S2] if they like. The list of bills is given in chronological order, with the most recent bills at the top.
+
+When on the Billing Page, the Patient can see a list of all of their bills, amounts, designees, and status [E1]. The patient can select a specific bill [S1] and can chose to print it [S2] if they like.
+
+## 4.3 Sub-flows
+* [S1] When a bill is selected, the bill displays the patient name, office visit date, attending HCP, bill status, and an itemized list of CPT codes, descriptions, and costs.
+* [S2] When a bill is selected, the user can chose to convert the bill into a PDF and print the bill.
+
+## 4.4 Alternative Flows
+* [E1] If there are no current Bills, then the Billing page will contain no information, only a message letting the user know they have no current Bills.
+
+## 4.5 Logging
+| Transaction Code | Verbose Description | Logged In MID | Secondary MID | Transaction Type | Patient Viewable |
+|------------------|---------------------|---------------|---------------|------------------|------------------|
+| 2200 | Patient Billing Page Viewed | Patient | None | View | Yes |
+| 2201 | Billing User Billing Page Viewed | Billing User | None | View | No |
+| 2210 | Patient Billing Download | Patient | None | View | Yes |
+| 2211 | Billing User Billing Download | Billing User | None | View | No |
+
+## 4.6 Data Format
+*No new data is entered/created as a part of this Use Case, rather existing records are viewed. For Data Format, see UC3.*
+
+## 4.7 Acceptance Scenarios 
+**Scenario 1** - *Patient View Bills and Download*\
+Patient Sarah Heckwoman authenticates into iTrust2. Sarah chooses to view her billing page. The system displays all of her current (unpaid) and past (paid) medical bills and the total amounts for each. She decides to select a specific bill. The specified bill shows her all of the information specified in [S1]. Sarah selects the optional "Download Bill" button and a PDF of the bill is downloaded to her device. A message is displayed that the bill has been downloaded successfully.
+
+**Scenario 2** - *Billing User Views and Downloads Bill*\
+Billing User, Bobby Billington, is an authenticated Billing user of iTrust2. Bobby chooses the view the billing page. The system displays all of the current (unpaid) and past (paid) medical bills and the total amounts for each. The list is in chronological order with the most recent bills at the top. Bobby is searching for a specific patient, so he goes to the search bar at the top and enters the patient's name. The list now only shows bills related to the searched patient. He selects the specific bill. The specified bill shows him all of the information specified in [S1]. Bobby selects the optional "Download Bill" button and a PDF of the bill is downloaded to his device. A message is displayed that the bill has been downloaded successfully.
+
+**Scenario 3** - *No Bills are available*\
+Patient, Zach Groseopen, is an authenticated in iTrust2, but has not yet been billed for his appointment. Zach chooses to view is billing page. Since Zach has not yet been billed, the billing page is contains no bills and is empty. A message appears on the screen letting Zach know that he does not have any current bills.

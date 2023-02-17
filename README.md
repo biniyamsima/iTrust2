@@ -186,6 +186,8 @@ Billing User, Bobby Billington, is an authenticated Billing user of iTrust2. Bob
 **Scenario 3** - *No Bills are available*\
 Patient, Zach Groseopen, is an authenticated in iTrust2, but has not yet been billed for his appointment. Zach chooses to view is billing page. Since Zach has not yet been billed, the billing page is contains no bills and is empty. A message appears on the screen letting Zach know that he does not have any current bills.
 
+## UC 5 Pay Bills
+
 ## 5.1 Preconditions
 At least one patient and one billing user ([UC1](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-1:-Adding-New-Billing-User)) are registered in the iTrust2 system. A billing user is logged into the system and has accessed the main billing page that contains all bills in the system ([UC4](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-4:-View-Bills)). The billing user then selects one of the bills from this list.
 

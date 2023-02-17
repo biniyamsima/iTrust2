@@ -121,7 +121,7 @@ Billing User Mike opens the CPT page and chooses the option to add a CPT code. H
 The iTrust2 system contains at least one HCP, patient, and billing staff member. The HCP is in the process of documenting an office visit for the patient. The iTrust2 user has authenticated themselves into iTrust2. 
 
 ### 3.2 Main Flow
-During an office visit, an HCP should enter at least one CPT code appropriate for the office visit [S1][S2][E1]. At least once of the CPT codes must be from the list of office visit time ranges as listed in the Maintain CPT Codes description [(UC2)](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-2:-Maintain-CPT-Codes). Other CPT codes can be added as appropriate and if they are available in the iTrust2 system (e.g., a CPT code for administering a vaccine). The HCP will select the CPT code from a drop-down menu.
+During an office visit, an HCP should enter at least one CPT code appropriate for the office visit [S1][S2][E1]. At least once of the CPT codes must be from the list of office visit time ranges as listed in the Maintain CPT Codes description (UC2). Other CPT codes can be added as appropriate and if they are available in the iTrust2 system (e.g., a CPT code for administering a vaccine). The HCP will select the CPT code from a drop-down menu.
 
 ### 3.3 Sub-flows
  * [S1] The HCP adds one CPT code from the list of available CPT codes before saving the office visit.
@@ -151,7 +151,7 @@ HCP Sarah Heckwoman authenticates into iTrust2. Sarah creates an office visit fo
 # UC4: View Bills
 
 ## 4.1 Precondition
-A Patient and Billing User ([UC1](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-1:-Adding-New-Billing-User)) are registered in the iTrust2 system. A user logs into the system. 
+A Patient and Billing User (UC1) are registered in the iTrust2 system. A user logs into the system. 
 
 ## 4.2 Main Flow
 When on the Billing Page, the Billing User can see a list of bills, their status, and totals for all patients [E1]. The Billing user may select a specific bill [S1] and print it [S2] if they like. The list of bills is given in chronological order, with the most recent bills at the top.
@@ -189,7 +189,7 @@ Patient, Zach Groseopen, is an authenticated in iTrust2, but has not yet been bi
 ## UC 5 Pay Bills
 
 ## 5.1 Preconditions
-At least one patient and one billing user ([UC1](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-1:-Adding-New-Billing-User)) are registered in the iTrust2 system. A billing user is logged into the system and has accessed the main billing page that contains all bills in the system ([UC4](https://github.ncsu.edu/engr-csc326-spring2022/csc326-TP-204-4/wiki/UC-4:-View-Bills)). The billing user then selects one of the bills from this list.
+At least one patient and one billing user (UC1) are registered in the iTrust2 system. A billing user is logged into the system and has accessed the main billing page that contains all bills in the system (UC4). The billing user then selects one of the bills from this list.
 
 ## 5.2 Main Flow
 The billing user selects the "Pay Bill" option while on the page for an individual bill. A form appears below the bill information that allows the billing user to record payment methods and the amount paid for each [S1][S2].

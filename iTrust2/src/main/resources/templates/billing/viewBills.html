@@ -1,0 +1,271 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+	<title> Manage Bills </title>
+	
+	<link rel="stylesheet" href="css/bootstrap.css"/>
+	<link rel="stylesheet" href="css/app.css"/>
+	<script th:src="@{/js/dateTimeService.js}" src="../js/dateTimeService.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var app = angular.module('myApp', ['dateTimeServices']);
+			app.controller('viewBills', function($scope, $http, dateTimeService) {
+				$scope.loadPaymentMethods = function() {
+					$http.get("/iTrust2/api/v1/paymentmethods").then(
+						function(response) {
+							$scope.paymentMethods = response.data;
+						});
+				}
+				$scope.loadBillStatuses = function() {
+					$http.get("/iTrust2/api/v1/billstatuses").then(
+						function(response) {
+							$scope.billStatuses = response.data;
+						});
+				}
+				
+				$scope.loadBills = function() {
+					$http.get("/iTrust2/api/v1/bill/patients/" + $scope.patientName).then(
+						function(response) {
+							$scope.bills = response.data;
+							console.log(response.data);
+							$scope.bills.forEach($scope.sumTotals);
+							$scope.patientIsSelected = true;
+							if ($scope.bills === undefined || $scope.bills.length == 0) {
+								$scope.displayPatientName = "No bills exist for patient " + $scope.patientName + ".";
+							}
+							else {
+								$scope.displayPatientName = "Showing all bills for " + $scope.patientName + ":";
+							}
+						}, function (rejection) {
+				              $scope.bills = [];
+				              $scope.message = "Could not display bills.";
+			            });	
+				}
+				
+				$scope.viewBill = function(bill) {
+					$scope.billIsSelected = true;
+					$scope.selected = bill;
+					$scope.showPayForm = false;
+					if ($scope.selected.status != "PAID") {
+						$scope.payBillOption = true;
+					}
+					else {
+						$scope.payBillOption = false;
+					}
+					if ($scope.selected.payments === undefined || $scope.selected.payments.length == 0) {
+						$scope.paymentsList = false;
+					}
+					else {
+						$scope.paymentsList = true;
+					}
+				}
+				
+				$scope.showForm = function() {
+					$scope.showPayForm = true;
+				}
+				
+				$scope.submit = function() {
+					// Create a new bill payment.
+					$scope.newBillPayment = {
+							payAmount: $scope.billForm.payAmount,
+							payMethod: $scope.billForm.payMethod,
+							payDate: $scope.billForm.payDate
+					};
+					
+					// Ensure that total amount of payment does not exceed cost of bill.
+					$scope.tempTotalPaid = 0;
+					for (let i = 0; i < $scope.selected.payments.length; i++) {
+						  $scope.tempTotalPaid += $scope.selected.payments[i].payAmount;
+					}
+					$scope.tempTotalPaid += $scope.newBillPayment.payAmount;
+					
+					$scope.tempTotalCost = $scope.selected.sum["cost"];
+					// If amount exceeds cost, then cancel transaction.
+					if ($scope.tempTotalCost < $scope.tempTotalPaid) {
+						$scope.selected.payments.splice($scope.selected.payments.length - 1, 1);
+						$scope.resetForm();
+						alert("Cannot submit the payment: The total amount paid cannot exceed the total amount of the bill.");
+					}
+					// Otherwise, update the bill.
+					else {
+						// Add new payment to list of payments.
+						$scope.selected.payments.push($scope.newBillPayment);
+						
+						// Update the bill.
+						$http.put("/iTrust2/api/v1/bill/" + $scope.selected.id, $scope.selected).then(
+							function(response) {
+								$scope.loadBills();
+								$scope.selected = response.data;
+								$scope.paymentsList = true;
+								$scope.showPayForm = false;
+								if ($scope.selected.status == "PAID") {
+									$scope.payBillOption = false;
+								}
+								$scope.resetForm();
+								alert("Payment successfully added!");
+							}, function (rejection) {								
+								$scope.resetForm();
+								alert("Cannot submit the payment: An unknown error occurred.");
+				            });	
+					}
+				}
+				
+				$scope.resetForm = function() {
+					$scope.billForm = {};
+					$scope.payBillForm.$setPristine();
+				}
+				
+				$scope.sumTotals = function(bill) {
+					bill.sum = bill.codes.reduce((a, b) => ({cost: a.cost + b.cost}));
+				}
+				
+				$scope.patientIsSelected = false;
+				$scope.billIsSelected = false;
+				$scope.payBillOption = false;
+				$scope.paymentsList = false;
+				$scope.showPayForm = false;
+				
+				$scope.loadPaymentMethods();
+				$scope.loadBillStatuses();
+				});
+		/*]]>*/
+		</script>
+		
+		<!-- All page content lives here. -->
+		<div class="generic-container ng-cloak" ng-app="myApp" ng-controller="viewBills">
+			<!-- Header -->
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<span class="lead">Manage Bills</span>
+				</div>
+			</div>
+			<!-- Patient Search -->
+			<p>To view bills for a specific patient, enter their name in the field below.</p>
+			<input ng-model="patientName"
+				name="patientName"
+				placeholder="Enter patient name..."/>
+			<button type="button"
+				ng-click="loadBills()">Search Bills</button>
+			<hr/>
+			
+			<!-- Main Content -->
+			<div class="container">
+				<div class="row">
+					<!-- List of Bills -->
+					<div class="col-sm-3">
+						<div ng-show="patientIsSelected">
+							<p class="h4">{{displayPatientName}}</p>
+							<div class="list-group">
+								<a class="list-group-item list-group-item-action disabled">Date&emsp;&emsp;&emsp;&emsp;&emsp;Status&emsp;&emsp;&emsp;&emsp;&emsp;Bill Total</a>
+		  						<button class="list-group-item list-group-item-action"
+		  								ng-click="viewBill(bill)"
+		  								ng-repeat="bill in bills">
+		  								{{bill.date}}&emsp;&emsp;{{bill.status}}&emsp;&emsp;&emsp;&emsp;${{bill.sum["cost"]}}</button>
+							</div>
+						</div>
+					</div>
+					
+					<!-- Spacing -->
+					<div class="col-sm-2"></div>
+					
+					<!-- Specific Bill Info -->
+					<div class="col-sm-7">
+						<div class="row" ng-show="billIsSelected">
+							<!-- Bill Information -->
+							<div class="col-2 col-sm-6">
+								<p class="h4">Viewing Bill from {{selected.date}}</p>
+								<p><b>Patient:</b> {{selected.patient}}</p>
+								<p><b>Office Visit Date:</b> {{selected.date}}</p>
+								<p><b>Attending HCP:</b> {{selected.hcp}}</p>
+								<p><b>Bill Status:</b> {{selected.status}}</p>
+								<br/>
+								<p ng-show="payBillOption">This bill is not fully paid.</p>
+								<button ng-show="payBillOption" ng-click="showForm()">Pay Bill</button>
+							</div>
+							<!-- CPT Codes -->
+							<div class="col-3 col-sm-6">
+								<p class="h4">CPT Codes for this Bill:</p>
+								<div class="panel panel-default">
+							    	<table class="table table-bordered">
+								        <thead class="thead-light">
+									    	<tr>
+										      	<th scope="col">Code</th>
+										      	<th scope="col">Description</th>
+									      		<th scope="col">Cost</th>
+									    	</tr>
+										</thead>
+									  	<tbody>
+											<tr ng-repeat="code in selected.codes">
+										    	<td>{{code.code}}</td>
+										      	<td>{{code.description}}</td>
+										      	<td>${{code.cost}}</td>
+								    		</tr>
+										</tbody>
+									</table>
+								</div>
+								<div ng-show="paymentsList">
+									<p class="h4">Payments on File:</p>
+									<div class="panel panel-default">
+								    	<table class="table table-bordered">
+									        <thead class="thead-light">
+										    	<tr>
+											      	<th scope="col">Payment Type</th>
+											      	<th scope="col">Amount</th>
+										      		<th scope="col">Date</th>
+										    	</tr>
+											</thead>
+										  	<tbody>
+												<tr ng-repeat="payment in selected.payments">
+											    	<td>{{payment.payMethod}}</td>
+											      	<td>${{payment.payAmount}}</td>
+											      	<td>{{payment.payDate}}</td>
+									    		</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- Row containing the pay bill form. -->
+						<div class="row" ng-show="showPayForm">
+							<div class="formcontainer">
+								<form ng-submit="submit()" name="payBillForm">
+									<div class="formgroup">
+										<p class="h4">Add Payment</p>
+										Payment method:
+										<select ng-model="billForm.payMethod"
+											ng-options="method as method for method in paymentMethods"
+											name="method"
+											required></select>
+										
+										<br/><br/>
+										Amount paid: 
+										<input type="number" ng-model="billForm.payAmount"
+											name="amount"
+											placeholder="$"
+											min="0.01"
+											required/>
+
+										<br/><br/>
+										Date of payment: 
+										<input type="date" ng-model="billForm.payDate"
+											name="date"
+											required/>
+										
+										<br/><br/>
+										<button type="button"
+											ng-click="submit()"
+											ng-disabled="payBillForm.$invalid">Add Payment</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,145 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title> Manage CPT Codes </title>
+
+<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+				
+				var app = angular.module('myApp', ['dateTimeServices']);
+			app
+					.controller(
+							'viewBills',
+							function($scope, $http, dateTimeService) {
+								$scope.displayName = function(b) {
+									return "Bill " + " " + b.id ;
+								}
+							
+							$scope.searchFilter = "";
+							$scope.printMode = true;
+							$scope.filterBills = function(code) {
+								
+								return ($scope.displayName(code)).toLowerCase().match($scope.searchFilter.toLowerCase());
+							}
+								
+							function formDifferent(current, original) {
+								for (var field in original) {
+									if (current[field] != original[field]) return true;
+								}
+								return false;
+							}
+							
+							$scope.selectBill = function(bill, override) {
+								if (!override && formDifferent($scope.billForm, $scope.originalForm)) {
+									if (!confirm("You have made changes to bill " + $scope.billForm.bill.id
+											+ ". Would you like to continue? (changes will be lost)")) {
+										$scope.selectedBill = "";
+										$scope.selectedBill = $scope.billForm.bill.id;
+										return;
+									}
+								}
+								
+								var pf = $scope.billForm = {};
+								var of = $scope.originalForm = {};
+								
+								// make a copy of the bill
+								for (var field in bill) {
+									if (field[0] == '$') continue; // don't mess with angular fields
+									pf[field] = of[field] = bill[field];
+								}
+								pf.bill = of.bill = bill;
+								
+								$scope.selectedBill = pf.bill;
+							}
+							
+							$scope.loadBills = function() {
+								$http.get("/iTrust2/api/v1/bill/mybills").then(
+									function(response) {
+										$scope.bills = response.data;
+										$scope.message = "";
+										$scope.bills.forEach($scope.sumTotals)
+									}, function (rejection) {
+							              $scope.bills = [];
+							              $scope.message = "Could not display bills";
+						            });	
+							}
+							
+							$scope.sumTotals = function(bill) {
+								bill.sum = bill.codes.reduce((a, b) => ({cost: a.cost + b.cost}));
+							}
+							
+							$scope.loadBills();
+							
+							$scope.download = function() {
+								$scope.printMode = !$scope.printMode;
+							}
+							});
+		/*]]>*/
+		</script>
+		
+			<div ng-app="myApp" ng-controller="viewBills">
+			<div style="float: left; width: 30%; height: 75%; overflow-y: auto" ng-show="printMode">
+			<h2>Bills:</h2>
+			<ul style="overflow: auto;height:90%;">
+					<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+					<li ng-repeat="bill in bills | filter:filterBills"><h4>
+							<label> <input type="radio"
+								ng-model="$parent.selectedBill" name="bill"
+								value="{{bill.id}}"
+								ng-click='$parent.selectBill(bill)' />&nbsp;{{$parent.displayName(bill)}}
+							</label>
+						</h4></li>
+				</ul>
+				</div>
+				<div style="float: left; width: 70%; border-left: 1px solid #bbb; padding-left: 3%; height: 75%; overflow-y: auto">
+					<h2 id="header0">View Bill</h2>
+					<table style="width:20%">
+						<tr style="border-spacing:10px">
+							<th>Status</th>
+							<th>Total</th>
+						</tr>
+						<tr ng-repeat = "bill in bills">
+							<td>{{bill.status}}</td>
+							<td>${{bill.sum["cost"]}}</td>
+						</tr>
+					</table>
+					<div ng-show="selectedBill">
+						<h3> Bill: {{selectedBill.id}}</h3>
+						<table>
+							<tr>
+								<th style="text-align: left; padding: 35px"><b>Name</b></th>
+								<th style="text-align: left; padding: 15px"><b>Visit Date</b></th>
+								<th style="text-align: left; padding: 15px"><b>HCP</b></th>
+								<th style="text-align: left; padding: 15px"><b>Billing Status</b></th>
+							</tr>
+							<tr>
+								<td>{{selectedBill.patient}}</td>
+								<td>{{selectedBill.date}}</td>
+								<td>{{selectedBill.hcp}}</td>
+								<td>{{selectedBill.status}}</td>
+							</tr>
+						</table>
+						<table>
+							<tr>
+								<th style="text-align: left; padding: 15px"><b>CPT Code</b></th>
+								<th style="text-align: left; padding: 15px"><b>Time Range</b>
+								<th style="text-align: left; padding: 15px"><b>Cost</b></th>
+							</tr>
+							<tr ng-repeat = "code in selectedBill.codes"> 
+								<td>{{code.code}}</td>
+								<td>{{code.description}}</td>
+								<td>{{code.cost}}</td>
+							</tr>
+						</table>
+						<br />
+						<div name="success">{{message}}</div>
+						<button ng-click="download()" name="download">Download PDF</button>				
+				</div>
+			</div>
+			</body>
+</html>

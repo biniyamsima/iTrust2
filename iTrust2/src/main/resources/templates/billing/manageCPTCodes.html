@@ -1,0 +1,259 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title> Manage CPT Codes </title>
+
+<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+				
+				var app = angular.module('myApp', ['dateTimeServices']);
+			app
+					.controller(
+							'manageCPTCodes',
+							function($scope, $http, dateTimeService) {
+								$scope.displayName = function(c) {
+									return c.code + " " + c.cost +  " " + c.description ;
+								}
+							
+							$scope.searchFilter = "";
+							$scope.filterCodes = function(code) {
+								
+								return ($scope.displayName(code)).toLowerCase().match($scope.searchFilter.toLowerCase());
+							}
+								
+							function formDifferent(current, original) {
+								for (var field in original) {
+									if (current[field] != original[field]) return true;
+								}
+								return false;
+							}
+							
+							$scope.originalForm = {};
+							$scope.codeForm = {};
+							
+							$scope.selectCode = function(code, override) {
+								
+								if (!override && formDifferent($scope.codeForm, $scope.originalForm)) {
+									if (!confirm("You have made changes to " + $scope.codeForm.code
+											+ ". Would you like to continue? (changes will be lost)")) {
+										$scope.selectedCode = "";
+										$scope.selectedCode = $scope.codeForm.code;
+										return;
+									}
+								}
+								
+								var pf = $scope.codeForm = {};
+								var of = $scope.originalForm = {};
+								
+								// make a copy of the code
+								for (var field in code) {
+									if (field[0] == '$') continue; // don't mess with angular fields
+									pf[field] = of[field] = code[field];
+								}
+								pf.code = of.code = code.code;
+								
+								$scope.selectedCode = pf.code;
+							}
+							
+							
+							
+							$scope.loadCodes = function() {
+							
+								$http.get("/iTrust2/api/v1/cptcodes").then(
+									function(response) {
+										$scope.codes = response.data;
+										$scope.message = "";
+									}, function (rejection) {
+							              $scope.codes = [];
+							              $scope.message = "Could not display codes";
+							            });	
+							}
+							
+							$scope.loadCodes();
+							var checkValidCode = function(code) {
+								var err = [];
+								
+								if($scope.code.cost <= 0) {
+									err.push("Price cannot be 0 or negative");
+								}
+								
+								for(var i = 0; i < $scope.codes.length; i++) {
+									
+									if($scope.codes[i].code == $scope.code) {
+										err.push("Code already exists");
+									}
+									
+								}
+								
+								return err.join(".  ");
+							}
+							
+							
+ 							$scope.addCode = function () {
+								
+							//	var err = checkValidCode($scope.code);
+								
+							//	if(err) {
+							//		$scope.errorAdding = err;
+							//		$scope.successMessage = "";
+							//	} //else {
+									
+									$http.post("/iTrust2/api/v1/cptcodes", $scope.code).then(
+											
+										function(response) {
+											$scope.loadCodes();
+											$scope.code.code = "";
+											$scope.code.cost = "";
+											$scope.code.description = "";		
+											$scope.errorAdding = "";
+							                $scope.successMessage = "Code added successfully.";
+										}, function (rejection) {
+						            	    $scope.loadCodes();
+							                $scope.errorAdding = "Could not add code: "; // + rejection.data.message;
+							                $scope.successMessage = "";
+							                
+										}				
+									);
+									
+									
+							//	}
+								
+							}
+ 							
+ 							
+ 							
+ 							$scope.deleteCode = function() {
+ 								
+ 								$http.delete("/iTrust2/api/v1/cptcode/" + $scope.codeForm.id).then(
+ 										function(response) {
+ 											$scope.loadCodes();
+ 											$scope.message = "Code removed successfully";
+ 										}, function(rejection) {
+ 											$scope.loadCodes();
+ 											$scope.message = "Could not remove code" + $scope.codeForm.id;
+ 										}
+
+ 								)};
+							
+ 							
+ 							
+ 							
+ 							
+ 							$scope.submit = function() {
+ 								
+ 								$http.put("/iTrust2/api/v1/cptcodes", $scope.codeForm).then(
+ 										
+ 										function(response) {
+ 											$scope.message = "CPT code updated successfully.";
+ 											//replace the codes in session
+ 											for (var i in $scope.codes)
+ 												if ($scope.codes[i].id == response.data.id) {
+ 													$scope.codes[i] = response.data;
+ 													$scope.selectCode(response.data, true);
+ 												}
+ 									
+ 									
+ 									
+ 							    	}, function(rejection) {
+ 							    		if (rejection.data.msg) {
+											$scope.message = "Error: " + rejection.data.msg;
+										} else {
+											$scope.message = "An error occured updating cpt code.";
+										}
+ 							    		
+ 							    		
+ 							    		
+ 							    	}) 
+ 									
+ 									
+ 							}
+							});
+				
+				
+				
+				
+		/*]]>*/
+		</script>
+		
+			<div ng-app="myApp" ng-controller="manageCPTCodes">
+			<div style="float: left; width: 30%; height: 75%; overflow-y: auto">
+			<h2>Codes:</h2>
+			<h4>      Code Price Description</h4>
+			<ul style="overflow: auto;height:90%;">
+					<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+					<li ng-repeat="code in codes | filter:filterCodes"><h4>
+							<label> <input type="radio"
+								ng-model="$parent.selectedCode" name="code"
+								value="{{code.code}}"
+								ng-click='$parent.selectCode(code)' />&nbsp;{{$parent.displayName(code)}}
+							</label>
+						</h4></li>
+				</ul>
+			</div>
+			<div
+				style="float: left; width: 70%; border-left: 1px solid #bbb; padding-left: 3%; height: 75%; overflow-y: auto">
+				<h2 id="header0">Edit CPT Code</h2>
+				<div ng-show="selectedCode">
+					<h3> Code: {{selectedCode}}</h3>
+					<table>
+					
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Code:</b></td>
+							<td><input type="text" name="code"
+								ng-model="codeForm.code" /></td>
+						</tr>
+						
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Cost:</b></td>
+							<td><input type="text" name="cost"
+								ng-model="codeForm.cost" /></td>
+						</tr>
+						
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Description:</b></td>
+							<td><input type="text" name="description"
+								ng-model="codeForm.description" /></td>
+						</tr>
+					
+					</table>
+					<br />
+					<button ng-click="submit()" name="submit">Submit</button>
+					<button ng-click="deleteCode()" name="delete">Delete</button>
+					<div name="success">{{message}}</div>
+			</div>
+			
+			</div>
+			
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-default">
+							<div class="panel-heading ">Add a Code</div>
+								<div class="panel-body">
+									<form name="addCodeForm"
+													ng-submit="addCode(addCodeForm.$valid)">
+													<b>Code:</b> <input type="text" name="code"
+														id="code" ng-model="code.code" /> <br> <br>
+													<b>Cost:</b> <input type="cost" name="cost"
+														id="cost" ng-model="code.cost" /> <br> <br>
+													<b>Description:</b> <input type="description"
+														name="description" id="description" ng-model="code.description" />
+														<br> <input type="submit" id="submit" value="Add Code" />
+												</form>
+												<div>
+													<p style="color: red" ng-model="errorAdding" id="error">{{errorAdding}}</p>
+												</div>
+												<div>
+													<p style="color: green" ng-model="successMessage"
+														id="success">{{successMessage}}</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+			</body>
+</html>
